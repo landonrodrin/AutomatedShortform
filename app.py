@@ -191,9 +191,9 @@ logger.info("Initializing Reddit API connection...")
 reddit = praw.Reddit(
     client_id="GAxbB9ODoitQo_0pJe143A",
     client_secret="lXZ0nrpVENiMsxR1inZ6AJo1CABAVw",
-    user_agent='RedditStoryScraperTool/1.0 by LandonR24',
-    username="LandonR24",
-    password="Flyingfire101"
+    user_agent='RedditStoryScraperTool/1.0 by Landon',
+    username="USERNAME",
+    password="PASSWORD"
 )
 logger.info("Reddit API initialized")
 
