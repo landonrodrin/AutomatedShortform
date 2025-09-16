@@ -1,0 +1,11 @@
+flask==2.3.3
+praw==7.8.1
+llama-cpp-python==0.2.11
+TTS==0.20.6
+torch==2.1.0
+torchaudio==2.1.0
+ffmpeg-python==0.2.0
+requests==2.31.0
+Pillow==10.0.1
+numpy==1.24.3
+pydub==0.25.1 

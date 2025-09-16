@@ -1,0 +1,15 @@
+﻿__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+output/
+temp_previews/
+gameplay_videos/
+avatar_images/
+background_music/
+model.gguf
+app.log
+*.mp4
+*.png
+*.ttf

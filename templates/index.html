@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reddit to TikTok Video Generator</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin: 0; padding: 0; color: #333; }
+        .container { max-width: 1200px; margin: 20px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 24px; }
+        h1 { text-align: center; color: #2d2d2d; margin-bottom: 8px; font-size: 2.5rem; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 32px; font-size: 1.1rem; }
+        
+        /* Mode Toggle */
+        .mode-toggle { text-align: center; margin-bottom: 32px; }
+        .mode-toggle button { margin: 0 8px; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: all 0.3s; }
+        .mode-toggle button.active { background: #0079d3; color: white; }
+        .mode-toggle button:not(.active) { background: #f0f0f0; color: #666; }
+        .mode-toggle button:hover { transform: translateY(-2px); }
+        
+        /* Tabs */
+        .tabs { display: flex; justify-content: center; margin-bottom: 24px; border-bottom: 2px solid #f0f0f0; }
+        .tab { padding: 12px 24px; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s; }
+        .tab.active { border-bottom-color: #0079d3; color: #0079d3; font-weight: bold; }
+        .tab:hover { background: #f8f9fa; }
+        
+        /* Tab Content */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Forms */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .form-section { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef; }
+        .form-section h3 { margin-top: 0; color: #495057; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #495057; }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; transition: border-color 0.3s; }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus { outline: none; border-color: #0079d3; box-shadow: 0 0 0 3px rgba(0,121,211,0.1); }
+        
+        /* File Upload Areas */
+        .upload-area { border: 2px dashed #ced4da; border-radius: 8px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .upload-area:hover { border-color: #0079d3; background: #f8f9fa; }
+        .upload-area.dragover { border-color: #0079d3; background: #e3f2fd; }
+        .upload-area input[type="file"] { display: none; }
+        .upload-icon { font-size: 2rem; margin-bottom: 8px; color: #6c757d; }
+        
+        /* Gallery */
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
+        .gallery-item { position: relative; border: 2px solid #e9ecef; border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.3s; }
+        .gallery-item:hover { border-color: #0079d3; transform: translateY(-2px); }
+        .gallery-item.selected { border-color: #0079d3; background: #e3f2fd; }
+        .gallery-item img { width: 100%; height: 100px; object-fit: cover; }
+        .gallery-item .filename { padding: 8px; font-size: 0.9rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Buttons */
+        .btn { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: all 0.3s; text-decoration: none; display: inline-block; text-align: center; }
+        .btn-primary { background: #0079d3; color: white; }
+        .btn-primary:hover { background: #005fa3; transform: translateY(-2px); }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        
+        /* Progress */
+        .progress-container { margin-top: 24px; display: none; }
+        .progress-bar { width: 100%; height: 24px; background: #e9ecef; border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
+        .progress-fill { height: 100%; background: linear-gradient(45deg, #0079d3, #005fa3); transition: width 0.3s; }
+        .progress-text { text-align: center; font-weight: 600; }
+        .progress-details { text-align: center; color: #6c757d; margin-top: 8px; }
+        
+        /* Queue */
+        .queue-container { margin-top: 24px; display: none; }
+        .queue-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 6px; margin-bottom: 8px; }
+        .queue-status { padding: 4px 8px; border-radius: 4px; font-size: 0.9rem; font-weight: 600; }
+        .queue-status.pending { background: #ffc107; color: #212529; }
+        .queue-status.processing { background: #0079d3; color: white; }
+        .queue-status.completed { background: #28a745; color: white; }
+        .queue-status.failed { background: #dc3545; color: white; }
+        
+        /* Results */
+        .result, .error { margin-top: 24px; padding: 16px; border-radius: 8px; }
+        .result { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .container { margin: 10px; padding: 16px; }
+            .gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+        }
+        
+        /* Voice Preview Styles */
+        .voice-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .voice-selector select {
+            flex: 1;
+        }
+        
+        .voice-preview-btn {
+            padding: 8px 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            min-width: 80px;
+            justify-content: center;
+        }
+        
+        .voice-preview-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .voice-preview-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .voice-preview-btn.loading {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .voice-preview-btn.playing {
+            background: #dc3545;
+        }
+
+        /* Hook Preview Styles */
+        .preview-container {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+            margin-top: 1rem;
+        }
+        
+        .preview-left, .preview-right {
+            flex: 1;
+        }
+        
+        .hook-display {
+            background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            min-height: 120px;
+            white-space: pre-wrap;
+        }
+        
+        .hook-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+        
+        .action-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .action-btn:not(.primary) {
+            background: #6c757d;
+        }
+        
+        .action-btn.primary {
+            background: #0079d3;
+        }
+        
+        .template-container {
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 1rem;
+            background: white;
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .template-container img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .preview-container {
+                flex-direction: column;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Reddit to TikTok Generator</h1>
+        <p class="subtitle">Transform Reddit stories into engaging TikTok videos with AI-powered narration</p>
+        
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+            <button id="autoModeBtn" class="active" onclick="setMode('auto')">🚀 Auto Mode</button>
+            <button id="userModeBtn" onclick="setMode('user')">⚙️ User Mode</button>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('scrape')">📝 Scrape Reddit</div>
+            <div class="tab" onclick="showTab('media')">🎥 Media Library</div>
+            <div class="tab" onclick="showTab('settings')">⚙️ Settings</div>
+        </div>
+        
+        <!-- Scrape Tab -->
+        <div id="scrape-tab" class="tab-content active">
+            <div class="form-grid">
+                <div class="form-section">
+                    <h3>📰 Scrape Reddit Post</h3>
+                    <form id="scrapePostForm" onsubmit="handleScrapePost(event)">
+                        <div class="form-group">
+            <label for="url">Reddit Post URL</label>
+            <input type="text" id="url" name="url" placeholder="https://www.reddit.com/r/nosleep/comments/abc123/story_title">
+                </div>
+                
+                        <button type="submit" class="btn btn-primary">Preview Hook & Template</button>
+                    </form>
+                    
+                    <!-- Post Customization Options -->
+                    <div id="postCustomization" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                        <h4>🎛️ Customization Options</h4>
+                        <div class="form-group">
+                            <label for="postTtsVoice">TTS Voice</label>
+                            <div class="voice-selector">
+                                <select id="postTtsVoice" name="postTtsVoice">
+                                    <option value="p232">p232 (Default - Deep Male Voice)</option>
+                                    <option value="p225">p225</option>
+                                    <option value="p226">p226</option>
+                                    <option value="p227">p227</option>
+                                    <option value="p228">p228</option>
+                                    <option value="p229">p229</option>
+                                    <option value="p230">p230</option>
+                                    <option value="p231">p231</option>
+                                    <option value="p233">p233</option>
+                                    <option value="p234">p234</option>
+                                    <option value="p236">p236</option>
+                                    <option value="p237">p237</option>
+                                    <option value="p238">p238</option>
+                                    <option value="p239">p239</option>
+                                    <option value="p240">p240</option>
+                                    <option value="p241">p241</option>
+                                    <option value="p243">p243</option>
+                                    <option value="p244">p244</option>
+                                    <option value="p245">p245</option>
+                                    <option value="p246">p246</option>
+                                    <option value="p247">p247</option>
+                                    <option value="p248">p248</option>
+                                    <option value="p249">p249</option>
+                                    <option value="p250">p250</option>
+                                    <option value="p251">p251</option>
+                                    <option value="p252">p252</option>
+                                    <option value="p253">p253</option>
+                                    <option value="p254">p254</option>
+                                    <option value="p255">p255</option>
+                                    <option value="p256">p256</option>
+                                    <option value="p257">p257</option>
+                                    <option value="p258">p258</option>
+                                    <option value="p259">p259</option>
+                                    <option value="p260">p260</option>
+                                </select>
+                                <button type="button" class="voice-preview-btn" onclick="previewVoice('postTtsVoice')">🔊 Preview</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="postUsername">Username</label>
+                            <input type="text" id="postUsername" name="postUsername" placeholder="Enter custom username">
+                        </div>
+                        <div class="form-group">
+                            <label for="postBackgroundVideo">Background Video</label>
+                            <select id="postBackgroundVideo" name="postBackgroundVideo">
+                                <option value="">Select from library...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="postBackgroundMusic">Background Music</label>
+                            <select id="postBackgroundMusic" name="postBackgroundMusic">
+                                <option value="">Select from library...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="postAvatar">Avatar</label>
+                            <select id="postAvatar" name="postAvatar">
+                                <option value="">Select from library...</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Custom Hook Field for User Mode -->
+                        <div id="customHookField" class="form-group" style="display: none;">
+                            <label for="customHook">Custom Hook (Optional - Leave empty for AI generation)</label>
+                            <textarea id="customHook" name="customHook" rows="3" placeholder="Enter your custom hook here, or leave empty to let AI generate one that you can regenerate..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>💬 Comment Compilation</h3>
+                    <form id="commentCompilationForm" onsubmit="handleCommentCompilation(event)">
+                        <div class="form-group">
+            <label for="commentUrl">Reddit Post URL</label>
+            <input type="text" id="commentUrl" name="commentUrl" placeholder="https://www.reddit.com/r/askreddit/comments/abc123/question_title">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Generate Comment Compilation</button>
+                    </form>
+                    
+                    <!-- Comment Compilation Customization -->
+                    <div id="commentCustomization" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                        <h4>🎛️ Customization Options</h4>
+                        <div class="form-group">
+                            <label for="commentTtsVoice">TTS Voice</label>
+                            <div class="voice-selector">
+                                <select id="commentTtsVoice" name="commentTtsVoice">
+                                    <option value="p316">p316 (Default - Comment Voice)</option>
+                                    <option value="p225">p225</option>
+                                    <option value="p226">p226</option>
+                                    <option value="p227">p227</option>
+                                    <option value="p228">p228</option>
+                                    <option value="p229">p229</option>
+                                    <option value="p230">p230</option>
+                                    <option value="p231">p231</option>
+                                    <option value="p232">p232</option>
+                                    <option value="p233">p233</option>
+                                    <option value="p234">p234</option>
+                                    <option value="p236">p236</option>
+                                    <option value="p237">p237</option>
+                                    <option value="p238">p238</option>
+                                    <option value="p239">p239</option>
+                                    <option value="p240">p240</option>
+                                    <option value="p241">p241</option>
+                                    <option value="p243">p243</option>
+                                    <option value="p244">p244</option>
+                                    <option value="p245">p245</option>
+                                    <option value="p246">p246</option>
+                                    <option value="p247">p247</option>
+                                    <option value="p248">p248</option>
+                                    <option value="p249">p249</option>
+                                    <option value="p250">p250</option>
+                                    <option value="p251">p251</option>
+                                    <option value="p252">p252</option>
+                                    <option value="p253">p253</option>
+                                    <option value="p254">p254</option>
+                                    <option value="p255">p255</option>
+                                    <option value="p256">p256</option>
+                                    <option value="p257">p257</option>
+                                    <option value="p258">p258</option>
+                                    <option value="p259">p259</option>
+                                    <option value="p260">p260</option>
+                                    <option value="p261">p261</option>
+                                    <option value="p262">p262</option>
+                                    <option value="p263">p263</option>
+                                    <option value="p264">p264</option>
+                                    <option value="p265">p265</option>
+                                    <option value="p266">p266</option>
+                                    <option value="p267">p267</option>
+                                    <option value="p268">p268</option>
+                                    <option value="p269">p269</option>
+                                    <option value="p270">p270</option>
+                                    <option value="p271">p271</option>
+                                    <option value="p272">p272</option>
+                                    <option value="p273">p273</option>
+                                    <option value="p274">p274</option>
+                                    <option value="p275">p275</option>
+                                    <option value="p276">p276</option>
+                                    <option value="p277">p277</option>
+                                    <option value="p278">p278</option>
+                                    <option value="p279">p279</option>
+                                    <option value="p280">p280</option>
+                                    <option value="p281">p281</option>
+                                    <option value="p282">p282</option>
+                                    <option value="p283">p283</option>
+                                    <option value="p284">p284</option>
+                                    <option value="p285">p285</option>
+                                    <option value="p286">p286</option>
+                                    <option value="p287">p287</option>
+                                    <option value="p288">p288</option>
+                                    <option value="p292">p292</option>
+                                    <option value="p293">p293</option>
+                                    <option value="p294">p294</option>
+                                    <option value="p295">p295</option>
+                                    <option value="p297">p297</option>
+                                    <option value="p298">p298</option>
+                                    <option value="p299">p299</option>
+                                    <option value="p300">p300</option>
+                                    <option value="p301">p301</option>
+                                    <option value="p302">p302</option>
+                                    <option value="p303">p303</option>
+                                    <option value="p304">p304</option>
+                                    <option value="p305">p305</option>
+                                    <option value="p306">p306</option>
+                                    <option value="p307">p307</option>
+                                    <option value="p308">p308</option>
+                                    <option value="p310">p310</option>
+                                    <option value="p311">p311</option>
+                                    <option value="p312">p312</option>
+                                    <option value="p313">p313</option>
+                                    <option value="p314">p314</option>
+                                    <option value="p317">p317</option>
+                                    <option value="p318">p318</option>
+                                    <option value="p323">p323</option>
+                                    <option value="p326">p326</option>
+                                    <option value="p329">p329</option>
+                                    <option value="p330">p330</option>
+                                    <option value="p333">p333</option>
+                                    <option value="p334">p334</option>
+                                    <option value="p335">p335</option>
+                                    <option value="p336">p336</option>
+                                    <option value="p339">p339</option>
+                                    <option value="p340">p340</option>
+                                    <option value="p341">p341</option>
+                                    <option value="p343">p343</option>
+                                    <option value="p345">p345</option>
+                                    <option value="p347">p347</option>
+                                    <option value="p351">p351</option>
+                                    <option value="p360">p360</option>
+                                    <option value="p361">p361</option>
+                                    <option value="p362">p362</option>
+                                    <option value="p363">p363</option>
+                                    <option value="p364">p364</option>
+                                    <option value="p374">p374</option>
+                                    <option value="p376">p376</option>
+                                </select>
+                                <button type="button" class="voice-preview-btn" onclick="previewVoice('commentTtsVoice')">🔊 Preview</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="commentUsername">Username</label>
+                            <input type="text" id="commentUsername" name="commentUsername" placeholder="Current: OminousStories">
+                        </div>
+                        <div class="form-group">
+                            <label for="commentGameplay">Background Video</label>
+                            <select id="commentGameplay" name="commentGameplay">
+                                <option value="">Current: minecraft.mp4</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="commentMusic">Background Music</label>
+                            <select id="commentMusic" name="commentMusic">
+                                <option value="">Current: simple.mp3</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="commentAvatar">Avatar</label>
+                            <select id="commentAvatar" name="commentAvatar">
+                                <option value="">Current: OminousStoriesLogo.png</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>📊 Scrape Subreddit</h3>
+                    <form id="scrapeSubredditForm" onsubmit="handleScrapeSubreddit(event)">
+                        <div class="form-group">
+            <label for="subreddit">Subreddit Name</label>
+            <input type="text" id="subreddit" name="subreddit" placeholder="nosleep">
+            </div>
+                        <div class="form-group">
+                            <label for="limit">Number of Posts</label>
+                            <input type="number" id="limit" name="limit" min="1" max="100" value="10">
+                        </div>
+                        <div class="form-group">
+            <label for="sort">Sort By</label>
+            <select id="sort" name="sort">
+                                <option value="hot">Hot</option>
+                                <option value="top_all">Top (All Time)</option>
+                                <option value="top_week">Top (This Week)</option>
+                                <option value="top_month">Top (This Month)</option>
+            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Scrape & Generate Videos</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+        
+        <!-- Media Library Tab -->
+        <div id="media-tab" class="tab-content">
+            <div class="form-grid">
+                <div class="form-section">
+                    <h3>🎮 Gameplay Videos</h3>
+                    <div class="upload-area" onclick="document.getElementById('gameplayUpload').click()">
+                        <div class="upload-icon">🎬</div>
+                        <p>Drag & drop MP4 files here or click to browse</p>
+                        <p><small>Max 1GB • 1080x1920 recommended</small></p>
+                        <input type="file" id="gameplayUpload" accept=".mp4" multiple>
+                    </div>
+                    <div id="gameplayGallery" class="gallery"></div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>🎵 Background Music</h3>
+                    <div class="upload-area" onclick="document.getElementById('musicUpload').click()">
+                        <div class="upload-icon">🎵</div>
+                        <p>Drag & drop MP3 files here or click to browse</p>
+                        <p><small>Max 1GB • High quality recommended</small></p>
+                        <input type="file" id="musicUpload" accept=".mp3" multiple>
+                    </div>
+                    <div id="musicGallery" class="gallery"></div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>🖼️ Avatar Images</h3>
+                <div class="upload-area" onclick="document.getElementById('avatarUpload').click()">
+                    <div class="upload-icon">👤</div>
+                    <p>Drag & drop PNG/JPG files here or click to browse</p>
+                    <p><small>Max 1GB • Square images recommended</small></p>
+                    <input type="file" id="avatarUpload" accept=".png,.jpg,.jpeg" multiple>
+                </div>
+                <div id="avatarGallery" class="gallery"></div>
+            </div>
+        </div>
+        
+        <!-- Hook Preview Section -->
+        <div id="hookPreviewSection" class="container" style="display: none;">
+            <h2>📝 Hook Preview</h2>
+            <div class="preview-container">
+                <div class="preview-left">
+                    <h3>Generated Hook:</h3>
+                    <div id="hookText" class="hook-display"></div>
+                    <div class="hook-actions">
+                        <button id="regenerateHookBtn" class="action-btn" onclick="regenerateHook()">🔄 Generate New Hook</button>
+                        <button id="proceedWithVideoBtn" class="action-btn primary" onclick="proceedWithVideo()">✅ Use This Hook & Create Video</button>
+                    </div>
+                </div>
+                <div class="preview-right">
+                    <h3>Reddit Template Preview:</h3>
+                    <div id="templatePreview" class="template-container">
+                        <img id="previewImage" src="" alt="Reddit Template Preview" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-content">
+            <div class="form-grid">
+                <div class="form-section">
+                    <h3>⚙️ Default Settings</h3>
+                    <div class="form-group">
+                        <label for="defaultUsername">Default Username</label>
+                        <input type="text" id="defaultUsername" name="defaultUsername" placeholder="Enter default username">
+                    </div>
+                    <div class="form-group">
+                        <label for="defaultGameplay">Default Gameplay Video</label>
+                        <select id="defaultGameplay" name="defaultGameplay">
+                            <option value="">Select default...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="defaultMusic">Default Background Music</label>
+                        <select id="defaultMusic" name="defaultMusic">
+                            <option value="">Select default...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="defaultAvatar">Default Avatar</label>
+                        <select id="defaultAvatar" name="defaultAvatar">
+                            <option value="">Select default...</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>📁 Output Settings</h3>
+                    <div class="form-group">
+                        <label for="outputLocation">Output Location</label>
+                        <select id="outputLocation" name="outputLocation">
+                            <option value="downloads">Downloads Folder</option>
+                            <option value="output">Output Folder</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="batchSize">GPU Batch Size</label>
+                        <select id="batchSize" name="batchSize">
+                            <option value="auto">Auto Detect</option>
+                            <option value="1">1 (Conservative)</option>
+                            <option value="2">2</option>
+                            <option value="4">4</option>
+                            <option value="8">8 (Aggressive)</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="saveSettings()">💾 Save Settings</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Progress Section -->
+        <div class="progress-container" id="progressContainer">
+            <h3>🔄 Processing Progress</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="progressText">Initializing...</div>
+            <div class="progress-details" id="progressDetails"></div>
+            <button type="button" class="btn btn-danger" onclick="cancelProcessing()">❌ Cancel</button>
+        </div>
+        
+        <!-- Queue Section -->
+        <div class="queue-container" id="queueContainer">
+            <h3>📋 Processing Queue</h3>
+            <div id="queueList"></div>
+        </div>
+        
+        <!-- Results -->
+        <div id="results"></div>
+        
+        <!-- Cleanup -->
+        <div style="text-align: center; margin-top: 32px;">
+            <button type="button" class="btn btn-danger" onclick="cleanupFiles()">🧹 Clean Up All Files</button>
+            <button type="button" class="btn btn-warning" onclick="cleanupTempFiles()" style="margin-left: 10px;">🗑️ Clean Up Temp Files</button>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'auto';
+        let processId = null;
+        
+        // Mode switching
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('autoModeBtn').classList.toggle('active', mode === 'auto');
+            document.getElementById('userModeBtn').classList.toggle('active', mode === 'user');
+            document.getElementById('commentCustomization').style.display = mode === 'user' ? 'block' : 'none';
+            document.getElementById('postCustomization').style.display = mode === 'user' ? 'block' : 'none';
+            document.getElementById('customHookField').style.display = mode === 'user' ? 'block' : 'none';
+        }
+        
+        // Tab switching
+        function showTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tab + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // File upload handling
+        function setupFileUpload(inputId, galleryId, type) {
+            const input = document.getElementById(inputId);
+            const gallery = document.getElementById(galleryId);
+            
+            input.addEventListener('change', (e) => {
+                handleFileUpload(e.target.files, type);
+            });
+            
+            // Drag and drop
+            const uploadArea = input.parentElement;
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                handleFileUpload(e.dataTransfer.files, type);
+            });
+        }
+        
+        function handleFileUpload(files, type) {
+            const formData = new FormData();
+            for (let file of files) {
+                if (file.size > 1024 * 1024 * 1024) { // 1GB limit
+                    alert(`File ${file.name} is too large. Maximum size is 1GB.`);
+                    continue;
+                }
+                formData.append('files', file);
+            }
+            formData.append('type', type);
+            
+            fetch('/upload_media', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    refreshGallery(type);
+                } else {
+                    alert('Upload failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Upload error: ' + error);
+            });
+        }
+        
+        function refreshGallery(type) {
+            fetch(`/get_media/${type}`)
+            .then(response => response.json())
+            .then(data => {
+                const galleryId = type + 'Gallery';
+                const gallery = document.getElementById(galleryId);
+                gallery.innerHTML = '';
+                
+                data.files.forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    item.onclick = () => selectMediaItem(type, file.name);
+                    
+                    if (type === 'avatar') {
+                        item.innerHTML = `
+                            <img src="/media/${type}/${file.name}" alt="${file.name}">
+                            <div class="filename">${file.name}</div>
+                        `;
+                    } else {
+                        item.innerHTML = `
+                            <div class="filename">${file.name}</div>
+                            <div style="padding: 8px; font-size: 0.8rem; color: #666;">
+                                ${file.size} • ${file.duration || 'Unknown'}
+                            </div>
+                        `;
+                    }
+                    
+                    gallery.appendChild(item);
+                });
+                
+                // Update dropdowns
+                updateDropdowns(type, data.files);
+            });
+        }
+        
+        function selectMediaItem(type, filename) {
+            // Remove previous selection
+            document.querySelectorAll(`#${type}Gallery .gallery-item`).forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Add selection to clicked item
+            event.target.closest('.gallery-item').classList.add('selected');
+            
+            // Update corresponding default dropdown in settings
+            const settingsSelectId = type === 'gameplay' ? 'defaultGameplay' : 
+                                   type === 'music' ? 'defaultMusic' : 'defaultAvatar';
+            const settingsSelect = document.getElementById(settingsSelectId);
+            if (settingsSelect) {
+                settingsSelect.value = filename;
+            }
+        }
+        
+        function updateDropdowns(type, files) {
+            const selectIds = {
+                'gameplay': ['defaultGameplay', 'postBackgroundVideo', 'commentGameplay'],
+                'music': ['defaultMusic', 'postBackgroundMusic', 'commentMusic'],
+                'avatar': ['defaultAvatar', 'postAvatar', 'commentAvatar']
+            };
+            
+            selectIds[type].forEach(selectId => {
+                const select = document.getElementById(selectId);
+                // Clear existing options except first
+                select.innerHTML = '<option value="">Select from library...</option>';
+                
+                files.forEach(file => {
+                    const option = document.createElement('option');
+                    option.value = file.name;
+                    option.textContent = file.name;
+                    select.appendChild(option);
+                });
+            });
+        }
+        
+        // Global variables for hook preview
+        let currentPreviewData = null;
+        
+        // Form submissions
+        function handleScrapePost(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            // Get the post URL
+            const postUrl = formData.get('url');
+            if (!postUrl) {
+                showError('Please enter a Reddit post URL');
+                return;
+            }
+            
+            // Prepare data for preview
+            const previewData = {
+                mode: currentMode,
+                postUrl: postUrl
+            };
+            
+            if (currentMode === 'user') {
+                // Get user customization options
+                previewData.username = document.getElementById('postUsername').value;
+                previewData.avatar = document.getElementById('postAvatar').value;
+                previewData.voice = document.getElementById('postTtsVoice').value;
+                previewData.gameplay = document.getElementById('postBackgroundVideo').value;
+                previewData.music = document.getElementById('postBackgroundMusic').value;
+                previewData.customHook = formData.get('customHook'); // For user mode custom hook
+            }
+            
+            // Show loading and call preview endpoint
+            document.getElementById('hookText').textContent = 'Generating hook...';
+            document.getElementById('previewImage').style.display = 'none';
+            document.getElementById('hookPreviewSection').style.display = 'block';
+            document.getElementById('regenerateHookBtn').disabled = true;
+            document.getElementById('proceedWithVideoBtn').disabled = true;
+            
+            fetch('/preview_hook', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(previewData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.hook && data.preview_image) {
+                    // Store the preview data for later use
+                    currentPreviewData = {
+                        hook: data.hook,
+                        hook_source: data.hook_source,
+                        post_data: data.post_data,
+                        user_options: data.user_options,
+                        mode: currentMode
+                    };
+                    
+                    // Display the hook and preview
+                    document.getElementById('hookText').textContent = data.hook;
+                    document.getElementById('previewImage').src = data.preview_image;
+                    document.getElementById('previewImage').style.display = 'block';
+                    
+                    // Enable buttons
+                    document.getElementById('regenerateHookBtn').disabled = false;
+                    document.getElementById('proceedWithVideoBtn').disabled = false;
+                    
+                    // Show/hide regenerate button based on hook source
+                    // Only hide if user provided their own custom hook
+                    if (data.hook_source === 'user_provided') {
+                        document.getElementById('regenerateHookBtn').style.display = 'none';
+                    } else {
+                        document.getElementById('regenerateHookBtn').style.display = 'inline-flex';
+                    }
+                } else {
+                    showError(data.error || 'Failed to generate hook preview');
+                }
+            })
+            .catch(error => {
+                showError('Preview request failed: ' + error);
+            });
+        }
+        
+        function regenerateHook() {
+            if (!currentPreviewData || currentPreviewData.hook_source === 'user_provided') {
+                return; // Should not happen - regenerate button should be hidden
+            }
+            
+            document.getElementById('hookText').textContent = 'Generating new hook...';
+            document.getElementById('regenerateHookBtn').disabled = true;
+            document.getElementById('proceedWithVideoBtn').disabled = true;
+            
+            const regenerateData = {
+                title: currentPreviewData.post_data.title,
+                content: currentPreviewData.post_data.content,
+                user_options: currentPreviewData.user_options
+            };
+            
+            fetch('/regenerate_hook', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(regenerateData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.hook && data.preview_image) {
+                    // Update the stored hook (regenerated hooks are always AI-generated)
+                    currentPreviewData.hook = data.hook;
+                    currentPreviewData.hook_source = 'ai_generated';
+                    
+                    // Display the new hook and preview
+                    document.getElementById('hookText').textContent = data.hook;
+                    document.getElementById('previewImage').src = data.preview_image;
+                    
+                    // Re-enable buttons
+                    document.getElementById('regenerateHookBtn').disabled = false;
+                    document.getElementById('proceedWithVideoBtn').disabled = false;
+                } else {
+                    showError(data.error || 'Failed to regenerate hook');
+                }
+            })
+            .catch(error => {
+                document.getElementById('regenerateHookBtn').disabled = false;
+                document.getElementById('proceedWithVideoBtn').disabled = false;
+                showError('Regenerate request failed: ' + error);
+            });
+        }
+        
+        function proceedWithVideo() {
+            if (!currentPreviewData) {
+                showError('No hook preview data available');
+                return;
+            }
+            
+            // Hide the preview section and show processing
+            document.getElementById('hookPreviewSection').style.display = 'none';
+            startProcessing();
+            
+            const videoData = {
+                mode: currentPreviewData.mode,
+                approved_hook: currentPreviewData.hook,
+                post_data: currentPreviewData.post_data,
+                user_options: currentPreviewData.user_options
+            };
+            
+            fetch('/proceed_with_video', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(videoData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    processId = data.process_id;
+                    pollProgress(processId);
+                } else {
+                    stopProcessing();
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                stopProcessing();
+                showError('Video generation request failed: ' + error);
+            });
+        }
+        
+        function handleScrapeSubreddit(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            formData.append('mode', 'auto'); // Bulk operations use auto mode for consistent defaults
+            
+            startProcessing();
+            
+            fetch('/scrape_and_generate_bulk', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    processId = data.processId;
+                    pollProgress(processId);
+                } else {
+                    stopProcessing();
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                stopProcessing();
+                showError('Request failed: ' + error);
+            });
+        }
+        
+        function handleCommentCompilation(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            formData.append('mode', currentMode);
+            formData.append('compilationType', 'comments');
+            
+            if (currentMode === 'user') {
+                formData.append('ttsVoice', document.getElementById('commentTtsVoice').value);
+                formData.append('customUsername', document.getElementById('commentUsername').value);
+                formData.append('gameplaySelect', document.getElementById('commentGameplay').value);
+                formData.append('musicSelect', document.getElementById('commentMusic').value);
+                formData.append('avatarSelect', document.getElementById('commentAvatar').value);
+            }
+            
+            startProcessing();
+            
+            fetch('/scrape_and_generate_comments', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    processId = data.processId;
+                    pollProgress(processId);
+                } else {
+                    stopProcessing();
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                stopProcessing();
+                showError('Request failed: ' + error);
+            });
+        }
+        
+        // Progress tracking
+        function startProcessing() {
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('queueContainer').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        function stopProcessing() {
+            document.getElementById('progressContainer').style.display = 'none';
+            processId = null;
+        }
+        
+        function pollProgress(processId) {
+            if (!processId) return;
+            
+            fetch(`/get_progress/${processId}`)
+            .then(response => response.json())
+            .then(data => {
+                updateProgress(data);
+                
+                if (data.status === 'completed') {
+                    stopProcessing();
+                    showResults(data.results);
+                } else if (data.status === 'failed') {
+                    stopProcessing();
+                    showError(data.message || 'An unknown error occurred');
+                } else if (data.status === 'cancelled') {
+                    stopProcessing();
+                    showError('Processing was cancelled');
+                } else {
+                    setTimeout(() => pollProgress(processId), 1000);
+                }
+            })
+            .catch(error => {
+                console.error('Progress polling error:', error);
+                setTimeout(() => pollProgress(processId), 2000);
+            });
+        }
+        
+        function updateProgress(data) {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const progressDetails = document.getElementById('progressDetails');
+            const queueList = document.getElementById('queueList');
+            
+            progressFill.style.width = data.progress + '%';
+            progressText.textContent = data.message;
+            progressDetails.textContent = data.details || '';
+            
+            // Update queue
+            queueList.innerHTML = '';
+            if (data.queue) {
+                data.queue.forEach(item => {
+                    const queueItem = document.createElement('div');
+                    queueItem.className = 'queue-item';
+                    queueItem.innerHTML = `
+                        <span>${item.name}</span>
+                        <span class="queue-status ${item.status}">${item.status}</span>
+                    `;
+                    queueList.appendChild(queueItem);
+                });
+            }
+        }
+        
+        function cancelProcessing() {
+            if (processId) {
+                fetch(`/cancel_process/${processId}`, { method: 'POST' })
+                .then(() => {
+                    stopProcessing();
+                    showError('Processing cancelled');
+                });
+            }
+        }
+        
+        // Results and errors
+        function showResults(results) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="result">
+                    <h3>✅ Processing Complete!</h3>
+                    <p>${results.message}</p>
+                    <div style="margin-top: 16px;">
+                        ${results.files.map(file => `
+                            <a href="/download/${file}" class="btn btn-success" style="margin-right: 8px;">
+                                📥 Download ${file}
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showError(error) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="error">
+                    <h3>❌ Error</h3>
+                    <p>${error}</p>
+                </div>
+            `;
+        }
+        
+        // Settings
+        function saveSettings() {
+            const settings = {
+                defaultUsername: document.getElementById('defaultUsername').value,
+                defaultGameplay: document.getElementById('defaultGameplay').value,
+                defaultMusic: document.getElementById('defaultMusic').value,
+                defaultAvatar: document.getElementById('defaultAvatar').value,
+                outputLocation: document.getElementById('outputLocation').value,
+                batchSize: document.getElementById('batchSize').value
+            };
+            
+            fetch('/save_settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Settings saved successfully!');
+                } else {
+                    alert('Failed to save settings: ' + data.error);
+                }
+            });
+        }
+        
+        function cleanupFiles() {
+            if (confirm('Are you sure you want to delete all generated files?')) {
+                fetch('/cleanup', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('All files cleaned up successfully!');
+                    } else {
+                        alert('Cleanup failed: ' + data.error);
+                    }
+                });
+            }
+        }
+        
+        function cleanupTempFiles() {
+            if (confirm('Are you sure you want to delete all temporary files (final_audio, reddit_post, temp_chunk, temp_hook, temp_story_by)?')) {
+                fetch('/cleanup_temp_files', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message + '\nDeleted: ' + data.deleted_files.length + ' files');
+                    } else {
+                        alert('Temp cleanup failed: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Temp cleanup failed: ' + error);
+                });
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupFileUpload('gameplayUpload', 'gameplayGallery', 'gameplay');
+            setupFileUpload('musicUpload', 'musicGallery', 'music');
+            setupFileUpload('avatarUpload', 'avatarGallery', 'avatar');
+            
+            // Load existing files
+            ['gameplay', 'music', 'avatar'].forEach(type => {
+                refreshGallery(type);
+            });
+            
+            // Load settings
+            fetch('/get_settings')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Object.keys(data.settings).forEach(key => {
+                        const element = document.getElementById(key);
+                        if (element) {
+                            element.value = data.settings[key];
+                        }
+                    });
+                }
+            });
+        });
+
+        // Voice Preview Functionality
+        let currentAudio = null;
+        let currentPreviewFile = null;
+
+        function previewVoice(selectId) {
+            const selectElement = document.getElementById(selectId);
+            const voiceId = selectElement.value;
+            const button = selectElement.parentElement.querySelector('.voice-preview-btn');
+            
+            if (!voiceId) {
+                alert('Please select a voice first');
+                return;
+            }
+
+            // If currently playing, stop it
+            if (currentAudio && !currentAudio.paused) {
+                currentAudio.pause();
+                currentAudio = null;
+                resetAllPreviewButtons();
+                return;
+            }
+
+            // Set button to loading state
+            button.textContent = '⏳ Loading...';
+            button.classList.add('loading');
+            button.disabled = true;
+
+            // Generate voice preview
+            fetch('/preview_voice', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ voice_id: voiceId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Store filename for cleanup
+                    currentPreviewFile = data.filename;
+                    
+                    // Create audio element and play
+                    currentAudio = new Audio(data.preview_url);
+                    
+                    // Update button to playing state
+                    button.textContent = '⏹️ Stop';
+                    button.classList.remove('loading');
+                    button.classList.add('playing');
+                    button.disabled = false;
+                    
+                    // Play the audio
+                    currentAudio.play().catch(error => {
+                        console.error('Error playing audio:', error);
+                        button.textContent = '❌ Error';
+                        button.disabled = false;
+                    });
+                    
+                    // Handle audio end
+                    currentAudio.addEventListener('ended', () => {
+                        resetAllPreviewButtons();
+                        cleanupCurrentPreview();
+                    });
+                    
+                    // Handle audio error
+                    currentAudio.addEventListener('error', () => {
+                        button.textContent = '❌ Error';
+                        button.classList.remove('loading', 'playing');
+                        button.disabled = false;
+                        cleanupCurrentPreview();
+                    });
+                    
+                } else {
+                    button.textContent = '❌ Error';
+                    button.classList.remove('loading');
+                    button.disabled = false;
+                    alert('Failed to generate voice preview: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Voice preview error:', error);
+                button.textContent = '❌ Error';
+                button.classList.remove('loading');
+                button.disabled = false;
+                alert('Error generating voice preview');
+            });
+        }
+
+        function resetAllPreviewButtons() {
+            document.querySelectorAll('.voice-preview-btn').forEach(btn => {
+                btn.textContent = '🔊 Preview';
+                btn.classList.remove('loading', 'playing');
+                btn.disabled = false;
+            });
+        }
+
+        function cleanupCurrentPreview() {
+            if (currentPreviewFile) {
+                fetch('/cleanup_voice_preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ filename: currentPreviewFile })
+                }).catch(error => {
+                    console.error('Error cleaning up preview:', error);
+                });
+                currentPreviewFile = null;
+            }
+        }
+
+        // Cleanup preview on page unload
+        window.addEventListener('beforeunload', cleanupCurrentPreview);
+
+    </script>
+</body>
+</html> 
